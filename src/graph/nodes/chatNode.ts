@@ -4,6 +4,7 @@ import type { GraphState } from '../graph.ts';
 import { ChatResponseSchema, getSystemPrompt, getUserPromptTemplate } from '../../prompts/v1/chatResponse.ts';
 import { AIMessage, HumanMessage } from 'langchain';
 import { PreferencesService } from '../../services/preferencesService.ts';
+import { config } from '../../config.ts';
 
 export function createChatNode(llmClient: OpenRouterService, preferenceService: PreferencesService) {
   return async (state: GraphState, runtime?: Runtime): Promise<Partial<GraphState>> => {
@@ -38,12 +39,15 @@ export function createChatNode(llmClient: OpenRouterService, preferenceService: 
 
     const response = result.data;
 
+    const totalMessages = state.messages.length;
+    const needsSumarization = totalMessages >= config.maxMessagesToSummary;
+
     return {
       messages: [
         new AIMessage(response.message)
       ],
       extractedPreferences: response.shouldSavePreferences ? response.preferences : undefined,
-      needsSummarization: false,
+      needsSummarization: needsSumarization,
     };
   };
 }
